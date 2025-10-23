@@ -1,110 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Music Journey</title>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0e0e0e;
-      color: #f2f2f2;
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-    }
-    header {
-      text-align: center;
-      padding: 4rem 1rem 2rem;
-      background: linear-gradient(135deg, #ff4d4d, #6b00ff);
-      color: white;
-    }
-    header h1 {
-      margin-bottom: 0.5rem;
-      font-size: 2.5rem;
-    }
-    header p {
-      font-size: 1.1rem;
-      opacity: 0.9;
-    }
-    main {
-      max-width: 700px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
-    section {
-      margin-bottom: 3rem;
-    }
-    h2 {
-      color: #ff4d4d;
-    }
-    .updates p {
-      background: #1a1a1a;
-      border-left: 4px solid #ff4d4d;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-      background: #1a1a1a;
-      padding: 1.5rem;
-      border-radius: 10px;
-    }
-    input[type="email"] {
-      padding: 0.8rem;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-    }
-    button {
-      background: #ff4d4d;
-      color: white;
-      padding: 0.8rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: 0.2s;
-    }
-    button:hover {
-      background: #ff6666;
-    }
-    footer {
-      text-align: center;
-      padding: 2rem;
-      font-size: 0.9rem;
-      opacity: 0.7;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coming Soon | My Music</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>My Music Journey</h1>
-    <p>Sharing my path through beats, melodies, and progress.</p>
-  </header>
+  <div class="content">
+  <div class="tv-container">
+    <!-- TV SVG -->
+    <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" class="tv-svg">
+      <!-- TV Body -->
+      <rect x="10" y="20" width="180" height="120" rx="10" ry="10" fill="#222" stroke="white" stroke-width="3"/>
+      <!-- Screen area (just for reference, will overlay canvas) -->
+      <rect x="30" y="40" width="140" height="80" fill="#000"/>
+    </svg>
+    <!-- Canvas for static -->
+    <canvas id="tvStatic" width="140" height="80"></canvas>
+  </div>
 
-  <main>
-    <section class="updates">
-      <h2>Latest Updates</h2>
-      <p><strong>Oct 2025:</strong> Just finished a new instrumental track! Trying out some lo-fi vibes this week.</p>
-      <p><strong>Sept 2025:</strong> Started experimenting with analog synth sounds. Loving the texture!</p>
-    </section>
+  <h1 class="wave-text">
+    <span>C</span><span>o</span><span>m</span><span>i</span><span>n</span><span>g</span> 
+    <span>S</span><span>o</span><span>o</span><span>n</span>
+  </h1>
+</div>
 
-    <section class="signup">
-      <h2>Stay in the Loop</h2>
-      <p>Sign up for my email list to get updates when I release new tracks or share behind-the-scenes content:</p>
-      <form action="https://formspree.io/f/your-form-id" method="POST">
-        <input type="email" name="email" placeholder="Your email address" required />
-        <button type="submit">Subscribe</button>
-      </form>
-    </section>
-  </main>
 
-  <footer>
-    <p>© 2025 My Music Journey — Built with ❤️ and GitHub Pages</p>
-  </footer>
+<script src="gradient.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
+
