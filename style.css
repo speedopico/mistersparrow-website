@@ -69,3 +69,21 @@ h1 {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+
+.drawing-btn {
+  display: inline-block;
+  padding: 10px 18px;
+  margin: 10px 0;
+  background: #ff3366;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 6px;
+  border: 2px solid #ff3366;
+  transition: all 0.2s;
+}
+
+.drawing-btn:hover {
+  background: white;
+  color: #ff3366;
+}
