@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiggly Drawing Tool</title>
+<link rel="stylesheet" href="wiggly-draw.css">
+</head>
+<body>
+
+<input type="file" id="upload"><br>
+
+<div class="toolbar">
+  Layer:
+  <button id="bgBtn">Background</button>
+  <button id="fgBtn" class="active">Foreground</button>
+  Mode:
+  <button id="drawBtn" class="active">Draw</button>
+  <button id="eraseBtn">Eraser</button>
+  Undo: <button id="undoBtn">Undo</button>
+  Redo: <button id="redoBtn">Redo</button>
+  <br>
+  Colors:
+  <button style="background:#ff3333" data-color="#ff3333"></button>
+  <button style="background:#3377ff" data-color="#3377ff"></button>
+  <button style="background:#33cc66" data-color="#33cc66"></button>
+  <button style="background:#ffff44" data-color="#ffff44"></button>
+  <button style="background:#000000" data-color="#000000"></button>
+  <button style="background:#ffffff" data-color="#ffffff"></button>
+  <button style="background:#ff77cc" data-color="#ff77cc"></button> <!-- Pink -->
+  <button style="background:#ff9933" data-color="#ff9933"></button> <!-- Orange -->
+  <button style="background:#9933ff" data-color="#9933ff"></button> <!-- Purple -->
+  <br>
+  Thickness: <input type="range" id="thick" min="1" max="80" value="6">
+  Jitter: <input type="range" id="jitter" min="0" max="12" step="0.2" value="2">
+  Speed: <input type="range" id="speed" min="0" max="20" step="0.2" value="6">
+</div>
+
+<div id="cursor"></div>
+<canvas id="c" width="800" height="600"></canvas>
+
+<script src="wiggly-draw.js"></script>
+</body>
+</html>

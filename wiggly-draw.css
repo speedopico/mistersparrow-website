@@ -1,0 +1,38 @@
+body {
+  background: #222;
+  color: white;
+  font-family: sans-serif;
+}
+
+#c {
+  border: 1px solid #555;
+  cursor: crosshair;
+}
+
+.toolbar {
+  margin: 8px 0;
+}
+
+button {
+  margin: 2px;
+  padding: 6px;
+}
+
+button.active {
+  outline: 2px solid white;
+}
+
+#cursor {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: none;
+}
+
+#c {
+  max-width: 90vw;  /* never exceed 90% of viewport width */
+  max-height: 80vh; /* never exceed 80% of viewport height */
+  width: 100%;
+  height: auto;     /* keeps aspect ratio */
+}
