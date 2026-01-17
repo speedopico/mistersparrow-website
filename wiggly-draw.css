@@ -19,7 +19,7 @@ button {
 }
 
 button.active {
-  outline: 2px solid white;
+  outline: 2px solid rgb(255, 29, 29);
 }
 
 #cursor {
@@ -31,8 +31,29 @@ button.active {
 }
 
 #c {
-  max-width: 90vw;  /* never exceed 90% of viewport width */
-  max-height: 80vh; /* never exceed 80% of viewport height */
-  width: 100%;
-  height: auto;     /* keeps aspect ratio */
+  border: 1px solid #555;
+  cursor: crosshair;
+
+  /* make it scale dynamically but preserve aspect ratio */
+  max-width: 90vw;
+  max-height: 80vh;
+
+  width: auto;   /* scale width based on height */
+  height: auto;  /* scale height based on width */
+
+  display: block;   /* remove inline spacing */
+  margin: 0 auto;   /* center horizontally */
+}
+
+
+.toolbar {
+  margin: 8px 0 60px 0; /* top 8px (already), bottom 20px to add space below */
+}
+
+#video {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
 }

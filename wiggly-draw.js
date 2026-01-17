@@ -1,208 +1,293 @@
+// =====================================================
+// STATE
+// =====================================================
+
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 
-let img = null;
-let drawing = false;
-let mode = 'draw';
-let activeLayer = 'fg';
-let color = '#ff3333';
-let frame = 0;
-let holdFrames = 3;
+const video = document.getElementById('video');
+const videoUpload = document.getElementById('videoUpload');
+const upload = document.getElementById('upload');
 
-let fgStrokes = [], bgStrokes = [], current = null;
+let state = {
+  usingVideo: false,
+  img: null,
+
+  drawing: false,
+  mode: 'draw',
+  activeLayer: 'fg',
+  color: '#ff3333',
+
+  frame: 0,
+  holdFrames: 3
+};
+
+let strokes = {
+  fg: [],
+  bg: []
+};
+
+let history = {
+  fg: { undo: [], redo: [] },
+  bg: { undo: [], redo: [] }
+};
+
+let current = null;
 let noiseCache = new Map();
 
-// undo/redo stacks
-let fgUndo = [], bgUndo = [];
-let fgRedo = [], bgRedo = [];
+// UI refs
+const thick = document.getElementById('thick');
+const jitter = document.getElementById('jitter');
+const speed = document.getElementById('speed');
+const cursor = document.getElementById('cursor');
+
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+    y: (e.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
 
 function setActiveButton(group, activeBtn) {
   group.forEach(b => b.classList.remove('active'));
   activeBtn.classList.add('active');
 }
 
-// Buttons
-const bgBtn = document.getElementById('bgBtn');
-const fgBtn = document.getElementById('fgBtn');
-const drawBtn = document.getElementById('drawBtn');
-const eraseBtn = document.getElementById('eraseBtn');
-const undoBtn = document.getElementById('undoBtn');
-const redoBtn = document.getElementById('redoBtn');
-const upload = document.getElementById('upload');
-const thick = document.getElementById('thick');
-const jitter = document.getElementById('jitter');
-const speed = document.getElementById('speed');
-const cursor = document.getElementById('cursor');
+function rand(v) {
+  return (Math.random() - 0.5) * v * 2;
+}
 
-bgBtn.onclick = () => { activeLayer = 'bg'; setActiveButton([bgBtn, fgBtn], bgBtn); };
-fgBtn.onclick = () => { activeLayer = 'fg'; setActiveButton([bgBtn, fgBtn], fgBtn); };
-drawBtn.onclick = () => { mode = 'draw'; setActiveButton([drawBtn, eraseBtn], drawBtn); };
-eraseBtn.onclick = () => { mode = 'erase'; setActiveButton([drawBtn, eraseBtn], eraseBtn); };
-undoBtn.onclick = () => { undo(); };
-redoBtn.onclick = () => { redo(); };
+function getNoise(key, j) {
+  if (state.frame % state.holdFrames === 0 || !noiseCache.has(key)) {
+    noiseCache.set(key, rand(j));
+  }
+  return noiseCache.get(key);
+}
 
-// Colors
-document.querySelectorAll('[data-color]').forEach(b => {
-  b.onclick = () => {
-    color = b.dataset.color;
-    setActiveButton(document.querySelectorAll('[data-color]'), b);
-  };
-});
 
-// Upload image
+// =====================================================
+// MEDIA LOADING
+// =====================================================
+
 upload.onchange = e => {
+  state.usingVideo = false;
+
   const r = new FileReader();
   r.onload = ev => {
-    img = new Image();
-    img.onload = () => {
-  // resize canvas to match image
-  canvas.width = img.width;
-  canvas.height = img.height;
-
-  // draw image at full size
-  ctx.drawImage(img, 0, 0);
-};
-
-    img.src = ev.target.result;
+    state.img = new Image();
+    state.img.onload = () => {
+      canvas.width = state.img.width;
+      canvas.height = state.img.height;
+    };
+    state.img.src = ev.target.result;
   };
+
   r.readAsDataURL(e.target.files[0]);
 };
 
+videoUpload.onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  state.usingVideo = true;
+
+  video.src = URL.createObjectURL(file);
+  video.play();
+
+  video.onloadedmetadata = () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  };
+};
+
+
+// =====================================================
+// DRAWING
+// =====================================================
+
 canvas.onmousedown = e => {
-  drawing = true;
-  if (mode === 'draw') {
-    current = { layer: activeLayer, color, thick: parseInt(thick.value), id: Math.random(), pts: [] };
-    (activeLayer === 'fg' ? fgStrokes : bgStrokes).push(current);
-    // push to undo stack
-    if (activeLayer === 'fg') fgUndo.push(current); else bgUndo.push(current);
-    // clear redo
-    if (activeLayer === 'fg') fgRedo = []; else bgRedo = [];
+  state.drawing = true;
+
+  const { x, y } = getPos(e);
+
+  if (state.mode === 'draw') {
+    current = {
+      layer: state.activeLayer,
+      color: state.color,
+
+      // ===== BRUSH THICKNESS HAPPENS HERE =====
+      thick: parseInt(thick.value),
+
+      id: Math.random(),
+      pts: [{ x, y }]
+    };
+
+    strokes[state.activeLayer].push(current);
+
+    history[state.activeLayer].undo.push(current);
+    history[state.activeLayer].redo = [];
   }
 };
-canvas.onmouseup = () => drawing = false;
 
 canvas.onmousemove = e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  const { x, y } = getPos(e);
 
-  cursor.style.left = e.clientX - 20 + 'px';
-  cursor.style.top = e.clientY - 20 + 'px';
-  cursor.style.width = '40px';
-  cursor.style.height = '40px';
-  cursor.style.display = mode === 'erase' ? 'block' : 'none';
+  // ----- eraser cursor -----
+  if (state.mode === 'erase') {
+    cursor.style.display = 'block';
+    cursor.style.left = `${e.clientX - cursor.offsetWidth/2}px`;
+    cursor.style.top = `${e.clientY - cursor.offsetHeight/2}px`;
+  } else {
+    cursor.style.display = 'none';
+  }
 
-  if (!drawing) return;
+  if (!state.drawing) return;
 
-  if (mode === 'erase') { eraseAt(x, y); return; }
-  current.pts.push({ x, y });
+  if (state.mode === 'draw' && current) {
+    current.pts.push({ x, y });
+  } else if (state.mode === 'erase') {
+    eraseAt(x, y);
+  }
 };
 
-// eraser
+canvas.onmouseup = () => state.drawing = false;
+
+
+// =====================================================
+// ERASER
+// =====================================================
+
 function eraseAt(x, y) {
   const R = 20;
-  function hit(s) { return s.pts.some(p => Math.hypot(p.x - x, p.y - y) < R); }
-  fgStrokes = fgStrokes.filter(s => !hit(s));
-  bgStrokes = bgStrokes.filter(s => !hit(s));
+
+  function hit(s) {
+    return s.pts.some(p => Math.hypot(p.x - x, p.y - y) < R);
+  }
+
+  strokes.fg = strokes.fg.filter(s => !hit(s));
+  strokes.bg = strokes.bg.filter(s => !hit(s));
 }
 
-// undo/redo functions
+
+// =====================================================
+// UNDO / REDO
+// =====================================================
+
 function undo() {
-  if (activeLayer === 'fg' && fgUndo.length) {
-    const s = fgUndo.pop(); fgRedo.push(s);
-    fgStrokes = fgStrokes.filter(st => st !== s);
-  } else if (activeLayer === 'bg' && bgUndo.length) {
-    const s = bgUndo.pop(); bgRedo.push(s);
-    bgStrokes = bgStrokes.filter(st => st !== s);
-  }
-}
-function redo() {
-  if (activeLayer === 'fg' && fgRedo.length) {
-    const s = fgRedo.pop(); fgUndo.push(s); fgStrokes.push(s);
-  } else if (activeLayer === 'bg' && bgRedo.length) {
-    const s = bgRedo.pop(); bgUndo.push(s); bgStrokes.push(s);
-  }
+  const h = history[state.activeLayer];
+
+  if (!h.undo.length) return;
+
+  const s = h.undo.pop();
+  h.redo.push(s);
+
+  strokes[state.activeLayer] =
+    strokes[state.activeLayer].filter(st => st !== s);
 }
 
-// original-style jitter
-function rand(v) { return (Math.random() - 0.5) * v * 2; }
-function getNoise(key, j) { if (frame % holdFrames === 0 || !noiseCache.has(key)) noiseCache.set(key, rand(j)); return noiseCache.get(key); }
+function redo() {
+  const h = history[state.activeLayer];
+
+  if (!h.redo.length) return;
+
+  const s = h.redo.pop();
+  h.undo.push(s);
+
+  strokes[state.activeLayer].push(s);
+}
+
+
+// =====================================================
+// DRAW RENDERING
+// =====================================================
+
 function drawStrokes(list) {
   const j = parseFloat(jitter.value);
+
   list.forEach(s => {
     ctx.strokeStyle = s.color;
+
+    // ===== ACTUAL USE OF THICKNESS =====
     ctx.lineWidth = s.thick;
+
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
+
     ctx.beginPath();
+
     s.pts.forEach((p, i) => {
       const x = p.x + getNoise(s.id + 'x' + i, j);
       const y = p.y + getNoise(s.id + 'y' + i, j);
+
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     });
+
     ctx.stroke();
   });
 }
 
+
+// =====================================================
+// UI BUTTONS
+// =====================================================
+
+document.getElementById('bgBtn').onclick =
+  () => state.activeLayer = 'bg';
+
+document.getElementById('fgBtn').onclick =
+  () => state.activeLayer = 'fg';
+
+document.getElementById('drawBtn').onclick =
+  () => state.mode = 'draw';
+
+document.getElementById('eraseBtn').onclick =
+  () => state.mode = 'erase';
+
+document.getElementById('undoBtn').onclick = undo;
+document.getElementById('redoBtn').onclick = redo;
+
+document.getElementById('clearBtn').onclick = () => {
+  strokes.fg = [];
+  strokes.bg = [];
+
+  history.fg = { undo: [], redo: [] };
+  history.bg = { undo: [], redo: [] };
+};
+
+document.querySelectorAll('[data-color]').forEach(b => {
+  b.onclick = () => state.color = b.dataset.color;
+});
+
+
+// =====================================================
+// RENDER LOOP
+// =====================================================
+
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  drawStrokes(bgStrokes);
-  drawStrokes(fgStrokes);
-  holdFrames = Math.max(1, 21 - parseInt(speed.value));
-  frame++;
+
+  if (state.usingVideo) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  } else if (state.img) {
+    ctx.drawImage(state.img, 0, 0, canvas.width, canvas.height);
+  }
+
+  drawStrokes(strokes.bg);
+  drawStrokes(strokes.fg);
+
+  state.holdFrames =
+    Math.max(1, 21 - parseInt(speed.value));
+
+  state.frame++;
   requestAnimationFrame(render);
 }
+
 render();
-
-canvas.onmousemove = e => {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const x = (e.clientX - rect.left) * scaleX;
-  const y = (e.clientY - rect.top) * scaleY;
-
-  // update cursor for eraser
-  cursor.style.left = e.clientX - 20 + 'px';
-  cursor.style.top = e.clientY - 20 + 'px';
-  cursor.style.width = '40px';
-  cursor.style.height = '40px';
-
-  if (!drawing) return;
-
-  if (mode === 'erase') { eraseAt(x, y); return; }
-
-  current.pts.push({ x, y });
-};
-
-canvas.onmousedown = e => {
-  drawing = true;
-  
-  // get scaled coordinates
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const x = (e.clientX - rect.left) * scaleX;
-  const y = (e.clientY - rect.top) * scaleY;
-
-  if (mode === 'draw') {
-    current = {
-      layer: activeLayer,
-      color,
-      thick: parseInt(thick.value),
-      id: Math.random(),
-      pts: [{ x, y }] // start with first point
-    };
-    (activeLayer === 'fg' ? fgStrokes : bgStrokes).push(current);
-
-    // push to undo stack
-    if (activeLayer === 'fg') fgUndo.push(current);
-    else bgUndo.push(current);
-    // clear redo
-    if (activeLayer === 'fg') fgRedo = []; else bgRedo = [];
-  }
-};
-
-canvas.onmouseup = () => drawing = false;
-canvas.onmouseleave = () => drawing = false; // important: stop drawing if mouse leaves
