@@ -33,10 +33,23 @@ body {
 button {
   margin: 2px;
   padding: 6px;
+  cursor: pointer;
 }
 
 button.active {
   outline: 2px solid rgb(255, 29, 29);
+}
+
+input[type="range"] {
+  cursor: pointer;
+}
+
+input[type="file"] {
+  cursor: pointer;
+}
+
+select {
+  cursor: pointer;
 }
 
 #cursor {
