@@ -2,15 +2,32 @@ body {
   background: #222;
   color: white;
   font-family: sans-serif;
+  padding: 20px;
+}
+
+.upload-row {
+  margin-bottom: 20px;
 }
 
 #c {
   border: 1px solid #555;
   cursor: crosshair;
+  max-width: 90vw;
+  max-height: 80vh;
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .toolbar {
-  margin: 8px 0;
+  margin: 20px 0;
+  max-width: 800px;
+}
+
+.toolbar-row {
+  margin-bottom: 10px;
+  display: block;
 }
 
 button {
@@ -28,26 +45,6 @@ button.active {
   border: 2px solid white;
   border-radius: 50%;
   display: none;
-}
-
-#c {
-  border: 1px solid #555;
-  cursor: crosshair;
-
-  /* make it scale dynamically but preserve aspect ratio */
-  max-width: 90vw;
-  max-height: 80vh;
-
-  width: auto;   /* scale width based on height */
-  height: auto;  /* scale height based on width */
-
-  display: block;   /* remove inline spacing */
-  margin: 0 auto;   /* center horizontally */
-}
-
-
-.toolbar {
-  margin: 8px 0 60px 0; /* top 8px (already), bottom 20px to add space below */
 }
 
 #video {
