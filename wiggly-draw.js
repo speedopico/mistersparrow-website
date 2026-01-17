@@ -31,10 +31,6 @@ const jitter = document.getElementById('jitter');
 const speed = document.getElementById('speed');
 const cursor = document.getElementById('cursor');
 
-// Button groups
-const layerBtns = [document.getElementById('bgBtn'), document.getElementById('fgBtn')];
-const modeBtns = [document.getElementById('drawBtn'), document.getElementById('eraseBtn')];
-
 // ===============================
 // HELPERS
 // ===============================
@@ -44,11 +40,6 @@ function getPos(e) {
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
   return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-}
-
-function setActiveButton(group, activeBtn) {
-  group.forEach(b => b.classList.remove('active'));
-  activeBtn.classList.add('active');
 }
 
 function rand(v) { return (Math.random() - 0.5) * v * 2; }
@@ -227,8 +218,15 @@ document.getElementById('clearBtn').onclick = () => {
   history.bg = { undo: [], redo: [] };
 };
 
+// COLOR BUTTONS WITH HIGHLIGHTING
 document.querySelectorAll('[data-color]').forEach(b => {
-  b.onclick = () => state.color = b.dataset.color;
+  b.onclick = function() {
+    state.color = this.dataset.color;
+    // Remove active from all color buttons
+    document.querySelectorAll('[data-color]').forEach(btn => btn.classList.remove('active'));
+    // Add active to this button
+    this.classList.add('active');
+  };
 });
 
 // ===============================
