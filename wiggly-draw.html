@@ -30,22 +30,24 @@
 
   <button id="clearBtn">Clear All</button>
 
+
   <br>
 
   Video:
-  <button id="playBtn">Play</button>
-  <button id="pauseBtn">Pause</button>
-  <input id="scrubber" type="range" min="0" max="100" value="0">
+<button id="playBtn">Play</button>
+<button id="pauseBtn">Pause</button>
 
-  Speed:
-  <select id="videoRate">
-    <option value="0.5">0.5x</option>
-    <option value="1" selected>1x</option>
-    <option value="1.5">1.5x</option>
-    <option value="2">2x</option>
-  </select>
+<input id="scrubber" type="range" min="0" max="100" value="0" style="width:180px">
 
-  <br>
+Speed:
+<select id="videoRate">
+  <option value="0.5">0.5x</option>
+  <option value="1" selected>1x</option>
+  <option value="1.5">1.5x</option>
+  <option value="2">2x</option>
+</select>
+
+<br>
 
   Colors:
   <button style="background:#ff3333" data-color="#ff3333"></button>
