@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wiggly Draw – Image or Video</title>
+<title>Wiggly Drawing Tool</title>
 <link rel="stylesheet" href="wiggly-draw.css">
 </head>
-
 <body>
 
 <h2>Upload Source</h2>
-Image: <input type="file" id="upload"><br>
-Video: <input type="file" id="videoUpload" accept="video/*"><br>
+<div class="upload-row">
+  Image: <input type="file" id="upload">
+  Video: <input type="file" id="videoUpload" accept="video/*">
+</div>
 
 <video id="video" loop muted></video>
 
@@ -26,6 +27,7 @@ Video: <input type="file" id="videoUpload" accept="video/*"><br>
 
   Undo: <button id="undoBtn">Undo</button>
   Redo: <button id="redoBtn">Redo</button>
+
   <button id="clearBtn">Clear All</button>
 
   <br>
