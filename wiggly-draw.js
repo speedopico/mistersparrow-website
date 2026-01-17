@@ -1,6 +1,6 @@
-// =====================================================
+// ===============================
 // STATE
-// =====================================================
+// ===============================
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -12,45 +12,34 @@ const upload = document.getElementById('upload');
 let state = {
   usingVideo: false,
   img: null,
-
   drawing: false,
-  mode: 'draw',          // "draw" or "erase"
-  activeLayer: 'fg',     // "fg" or "bg"
+  mode: 'draw',
+  activeLayer: 'fg',
   color: '#ff3333',
-
   frame: 0,
-  holdFrames: 3,
+  holdFrames: 3
 };
 
-let strokes = {
-  fg: [],
-  bg: [],
-};
-
-let history = {
-  fg: { undo: [], redo: [] },
-  bg: { undo: [], redo: [] },
-};
-
+let strokes = { fg: [], bg: [] };
+let history = { fg: { undo: [], redo: [] }, bg: { undo: [], redo: [] } };
 let current = null;
 let noiseCache = new Map();
 
-// UI refs
+// UI elements
 const thick = document.getElementById('thick');
 const jitter = document.getElementById('jitter');
 const speed = document.getElementById('speed');
 const cursor = document.getElementById('cursor');
 
-// =====================================================
+// ===============================
 // HELPERS
-// =====================================================
+// ===============================
 
-function getMousePos(e) {
+function getPos(e) {
   const rect = canvas.getBoundingClientRect();
-  return {
-    x: (e.clientX - rect.left) * (canvas.width / rect.width),
-    y: (e.clientY - rect.top) * (canvas.height / rect.height)
-  };
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
 }
 
 function setActiveButton(group, activeBtn) {
@@ -58,10 +47,7 @@ function setActiveButton(group, activeBtn) {
   activeBtn.classList.add('active');
 }
 
-function rand(v) {
-  return (Math.random() - 0.5) * v * 2;
-}
-
+function rand(v) { return (Math.random() - 0.5) * v * 2; }
 function getNoise(key, j) {
   if (state.frame % state.holdFrames === 0 || !noiseCache.has(key)) {
     noiseCache.set(key, rand(j));
@@ -69,31 +55,28 @@ function getNoise(key, j) {
   return noiseCache.get(key);
 }
 
-// =====================================================
-// MEDIA LOADING
-// =====================================================
-
-function resizeCanvasToMedia(width, height) {
-  const maxW = window.innerWidth * 0.9;
-  const maxH = window.innerHeight * 0.8;
-  const scale = Math.min(maxW / width, maxH / height);
-
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+function resizeCanvasToFit() {
+  if (state.img) {
+    canvas.width = state.img.width;
+    canvas.height = state.img.height;
+  } else if (state.usingVideo && video.videoWidth && video.videoHeight) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
 }
+
+// ===============================
+// MEDIA LOADING
+// ===============================
 
 upload.onchange = e => {
   state.usingVideo = false;
-
   const r = new FileReader();
   r.onload = ev => {
     state.img = new Image();
-    state.img.onload = () => {
-      resizeCanvasToMedia(state.img.width, state.img.height);
-    };
+    state.img.onload = () => resizeCanvasToFit();
     state.img.src = ev.target.result;
   };
-
   r.readAsDataURL(e.target.files[0]);
 };
 
@@ -104,37 +87,28 @@ videoUpload.onchange = e => {
   state.usingVideo = true;
   video.src = URL.createObjectURL(file);
   video.play();
-
-  video.onloadedmetadata = () => {
-    resizeCanvasToMedia(video.videoWidth, video.videoHeight);
-  };
+  video.onloadedmetadata = () => resizeCanvasToFit();
 };
 
-// =====================================================
+// ===============================
 // DRAWING
-// =====================================================
+// ===============================
 
 canvas.onmousedown = e => {
   state.drawing = true;
-
-  const { x, y } = getMousePos(e);
-
+  const { x, y } = getPos(e);
   if (state.mode === 'draw') {
-    current = {
-      layer: state.activeLayer,
-      color: state.color,
-      thick: parseInt(thick.value),
-      id: Math.random(),
-      pts: [{ x, y }]
-    };
+    current = { layer: state.activeLayer, color: state.color, thick: parseInt(thick.value), id: Math.random(), pts: [{ x, y }] };
     strokes[state.activeLayer].push(current);
     history[state.activeLayer].undo.push(current);
     history[state.activeLayer].redo = [];
   }
 };
 
+canvas.onmouseup = () => state.drawing = false;
+
 canvas.onmousemove = e => {
-  const { x, y } = getMousePos(e);
+  const { x, y } = getPos(e);
 
   // Eraser cursor
   if (state.mode === 'erase') {
@@ -154,27 +128,20 @@ canvas.onmousemove = e => {
   }
 };
 
-canvas.onmouseup = () => state.drawing = false;
-canvas.onmouseleave = () => state.drawing = false;
-
-// =====================================================
+// ===============================
 // ERASER
-// =====================================================
+// ===============================
 
 function eraseAt(x, y) {
   const R = 20;
-
-  function hit(s) {
-    return s.pts.some(p => Math.hypot(p.x - x, p.y - y) < R);
-  }
-
+  function hit(s) { return s.pts.some(p => Math.hypot(p.x - x, p.y - y) < R); }
   strokes.fg = strokes.fg.filter(s => !hit(s));
   strokes.bg = strokes.bg.filter(s => !hit(s));
 }
 
-// =====================================================
+// ===============================
 // UNDO / REDO
-// =====================================================
+// ===============================
 
 function undo() {
   const h = history[state.activeLayer];
@@ -192,9 +159,9 @@ function redo() {
   strokes[state.activeLayer].push(s);
 }
 
-// =====================================================
-// DRAW RENDERING
-// =====================================================
+// ===============================
+// DRAW STROKES
+// ===============================
 
 function drawStrokes(list) {
   const j = parseFloat(jitter.value);
@@ -214,32 +181,9 @@ function drawStrokes(list) {
   });
 }
 
-// =====================================================
-// VIDEO / IMAGE DRAW
-// =====================================================
-
-function drawMedia() {
-  if (state.usingVideo && video.readyState >= 2) {
-    // maintain aspect ratio
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    const scale = Math.min(canvas.width / vw, canvas.height / vh);
-    const w = vw * scale;
-    const h = vh * scale;
-    ctx.drawImage(video, 0, 0, vw, vh, 0, 0, w, h);
-  } else if (state.img) {
-    const iw = state.img.width;
-    const ih = state.img.height;
-    const scale = Math.min(canvas.width / iw, canvas.height / ih);
-    const w = iw * scale;
-    const h = ih * scale;
-    ctx.drawImage(state.img, 0, 0, iw, ih, 0, 0, w, h);
-  }
-}
-
-// =====================================================
+// ===============================
 // UI BUTTONS
-// =====================================================
+// ===============================
 
 document.getElementById('bgBtn').onclick = () => state.activeLayer = 'bg';
 document.getElementById('fgBtn').onclick = () => state.activeLayer = 'fg';
@@ -258,18 +202,22 @@ document.querySelectorAll('[data-color]').forEach(b => {
   b.onclick = () => state.color = b.dataset.color;
 });
 
-// =====================================================
+// ===============================
 // RENDER LOOP
-// =====================================================
+// ===============================
 
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawMedia();
+
+  if (state.usingVideo && video.readyState >= 2) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  else if (state.img) ctx.drawImage(state.img, 0, 0, canvas.width, canvas.height);
+
   drawStrokes(strokes.bg);
   drawStrokes(strokes.fg);
 
   state.holdFrames = Math.max(1, 21 - parseInt(speed.value));
   state.frame++;
+
   requestAnimationFrame(render);
 }
 
