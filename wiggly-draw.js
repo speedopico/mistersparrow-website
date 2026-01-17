@@ -189,25 +189,34 @@ function drawStrokes(list) {
 // UI BUTTONS
 // ===============================
 
-document.getElementById('bgBtn').onclick = function() {
+const bgBtn = document.getElementById('bgBtn');
+const fgBtn = document.getElementById('fgBtn');
+const drawBtn = document.getElementById('drawBtn');
+const eraseBtn = document.getElementById('eraseBtn');
+
+bgBtn.addEventListener('click', function() {
   state.activeLayer = 'bg';
-  setActiveButton(layerBtns, this);
-};
+  bgBtn.classList.add('active');
+  fgBtn.classList.remove('active');
+});
 
-document.getElementById('fgBtn').onclick = function() {
+fgBtn.addEventListener('click', function() {
   state.activeLayer = 'fg';
-  setActiveButton(layerBtns, this);
-};
+  fgBtn.classList.add('active');
+  bgBtn.classList.remove('active');
+});
 
-document.getElementById('drawBtn').onclick = function() {
+drawBtn.addEventListener('click', function() {
   state.mode = 'draw';
-  setActiveButton(modeBtns, this);
-};
+  drawBtn.classList.add('active');
+  eraseBtn.classList.remove('active');
+});
 
-document.getElementById('eraseBtn').onclick = function() {
+eraseBtn.addEventListener('click', function() {
   state.mode = 'erase';
-  setActiveButton(modeBtns, this);
-};
+  eraseBtn.classList.add('active');
+  drawBtn.classList.remove('active');
+});
 
 document.getElementById('undoBtn').onclick = undo;
 document.getElementById('redoBtn').onclick = redo;
