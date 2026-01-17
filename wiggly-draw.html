@@ -6,69 +6,65 @@
 <title>Wiggly Draw – Image or Video</title>
 <link rel="stylesheet" href="wiggly-draw.css">
 </head>
-
 <body>
 
 <h2>Upload Source</h2>
-Image: <input type="file" id="upload"><br>
-Video: <input type="file" id="videoUpload" accept="video/*"><br>
-
-<video id="video" loop muted></video>
-
 
 <div class="toolbar">
-  Layer:
-  <button id="bgBtn">Background</button>
-  <button id="fgBtn" class="active">Foreground</button>
+  <div class="upload-group">
+    Image: <input type="file" id="upload">
+    Video: <input type="file" id="videoUpload" accept="video/*">
+    <video id="video" loop muted style="display:none;"></video>
+  </div>
 
-  Mode:
-  <button id="drawBtn" class="active">Draw</button>
-  <button id="eraseBtn">Eraser</button>
+  <div class="controls">
+    Layer:
+    <button id="bgBtn">Background</button>
+    <button id="fgBtn" class="active">Foreground</button>
 
-  Undo: <button id="undoBtn">Undo</button>
-  Redo: <button id="redoBtn">Redo</button>
+    Mode:
+    <button id="drawBtn" class="active">Draw</button>
+    <button id="eraseBtn">Eraser</button>
 
-  <button id="clearBtn">Clear All</button>
+    Undo: <button id="undoBtn">Undo</button>
+    Redo: <button id="redoBtn">Redo</button>
 
+    <button id="clearBtn">Clear All</button>
+  </div>
 
-  <br>
+  <div class="video-controls">
+    Video:
+    <button id="playBtn">Play</button>
+    <button id="pauseBtn">Pause</button>
+    <input id="scrubber" type="range" min="0" max="100" value="0">
+    Speed:
+    <select id="videoRate">
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+  </div>
 
-  Video:
-<button id="playBtn">Play</button>
-<button id="pauseBtn">Pause</button>
+  <div class="draw-options">
+    Colors:
+    <button style="background:#ff3333" data-color="#ff3333"></button>
+    <button style="background:#3377ff" data-color="#3377ff"></button>
+    <button style="background:#33cc66" data-color="#33cc66"></button>
+    <button style="background:#ffff44" data-color="#ffff44"></button>
+    <button style="background:#000000" data-color="#000000"></button>
+    <button style="background:#ffffff" data-color="#ffffff"></button>
+    <button style="background:#ff77cc" data-color="#ff77cc"></button>
+    <button style="background:#ff9933" data-color="#ff9933"></button>
+    <button style="background:#9933ff" data-color="#9933ff"></button>
 
-<input id="scrubber" type="range" min="0" max="100" value="0" style="width:180px">
-
-Speed:
-<select id="videoRate">
-  <option value="0.5">0.5x</option>
-  <option value="1" selected>1x</option>
-  <option value="1.5">1.5x</option>
-  <option value="2">2x</option>
-</select>
-
-<br>
-
-  Colors:
-  <button style="background:#ff3333" data-color="#ff3333"></button>
-  <button style="background:#3377ff" data-color="#3377ff"></button>
-  <button style="background:#33cc66" data-color="#33cc66"></button>
-  <button style="background:#ffff44" data-color="#ffff44"></button>
-  <button style="background:#000000" data-color="#000000"></button>
-  <button style="background:#ffffff" data-color="#ffffff"></button>
-  <button style="background:#ff77cc" data-color="#ff77cc"></button>
-  <button style="background:#ff9933" data-color="#ff9933"></button>
-  <button style="background:#9933ff" data-color="#9933ff"></button>
-
-  <br>
-
-  Thickness: <input type="range" id="thick" min="1" max="200" value="6">
-  Jitter: <input type="range" id="jitter" min="0" max="12" step="0.2" value="2">
-  Speed: <input type="range" id="speed" min="0" max="20" step="0.2" value="6">
+    Thickness: <input type="range" id="thick" min="1" max="200" value="6">
+    Jitter: <input type="range" id="jitter" min="0" max="12" step="0.2" value="2">
+    Speed: <input type="range" id="speed" min="0" max="20" step="0.2" value="6">
+  </div>
 </div>
 
 <div id="cursor"></div>
-
 <canvas id="c"></canvas>
 
 <script src="wiggly-draw.js"></script>

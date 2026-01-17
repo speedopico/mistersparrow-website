@@ -1,25 +1,47 @@
 body {
+  margin: 0;
   background: #222;
   color: white;
   font-family: sans-serif;
 }
 
-#c {
-  border: 1px solid #555;
-  cursor: crosshair;
+.upload-container {
+  display: flex;
+  gap: 16px;
+  padding: 8px;
+  flex-wrap: wrap;
+}
+
+video {
+  display: block;
+  max-width: 90vw;
+  max-height: 60vh;
+  margin: 8px auto;
 }
 
 .toolbar {
-  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px auto;
+  max-width: 90vw;
+}
+
+.toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 
 button {
-  margin: 2px;
   padding: 6px;
+  margin: 2px;
+  cursor: pointer;
 }
 
 button.active {
-  outline: 2px solid rgb(255, 29, 29);
+  outline: 2px solid white;
 }
 
 #cursor {
@@ -30,30 +52,17 @@ button.active {
   display: none;
 }
 
-#c {
-  border: 1px solid #555;
-  cursor: crosshair;
-
-  /* make it scale dynamically but preserve aspect ratio */
+canvas {
+  display: block;
+  margin: 0 auto 16px auto;
   max-width: 90vw;
   max-height: 80vh;
-
-  width: auto;   /* scale width based on height */
-  height: auto;  /* scale height based on width */
-
-  display: block;   /* remove inline spacing */
-  margin: 0 auto;   /* center horizontally */
+  width: 100%;
+  height: auto;
+  border: 1px solid #555;
+  cursor: crosshair;
 }
 
-
-.toolbar {
-  margin: 8px 0 60px 0; /* top 8px (already), bottom 20px to add space below */
-}
-
-#video {
-  position: absolute;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
+input[type=range] {
+  vertical-align: middle;
 }

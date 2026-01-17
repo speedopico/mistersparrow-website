@@ -3,34 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coming Soon | My Music</title>
-<link rel="stylesheet" href="style.css">
+<title>Wiggly Draw – Image or Video</title>
+<link rel="stylesheet" href="wiggly-draw.css">
 </head>
 <body>
-  <div class="content">
-  <div class="tv-container">
-    <!-- TV SVG -->
-    <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" class="tv-svg">
-      <!-- TV Body -->
-      <rect x="10" y="20" width="180" height="120" rx="10" ry="10" fill="#222" stroke="white" stroke-width="3"/>
-      <!-- Screen area (just for reference, will overlay canvas) -->
-      <rect x="30" y="40" width="140" height="80" fill="#000"/>
-    </svg>
-    <!-- Canvas for static -->
-    <canvas id="tvStatic" width="140" height="80"></canvas>
-  </div>
 
-  <h1 class="wave-text">
-    <span>C</span><span>o</span><span>m</span><span>i</span><span>n</span><span>g</span> 
-    <span>S</span><span>o</span><span>o</span><span>n</span>
-  </h1>
-  <a href="wiggly-draw.html" class="drawing-btn">Open Wiggly Drawing Tool</a>
-
-
+<div class="upload-container">
+  <label>Image: <input type="file" id="upload"></label>
+  <label>Video: <input type="file" id="videoUpload" accept="video/*"></label>
 </div>
 
+<video id="video" loop muted></video>
 
-<script src="gradient.js"></script>
-<script src="main.js"></script>
+<div class="toolbar">
+  <div class="toolbar-row">
+    Layer:
+    <button id="bgBtn">Background</button>
+    <button id="fgBtn" class="active">Foreground</button>
+
+    Mode:
+    <button id="drawBtn" class="active">Draw</button>
+    <button id="eraseBtn">Eraser</button>
+
+    Undo:
+    <button id="undoBtn">Undo</button>
+    <button id="redoBtn">Redo</button>
+    <button id="clearBtn">Clear All</button>
+  </div>
+
+  <div class="toolbar-row">
+    Video:
+    <button id="playBtn">Play</button>
+    <button id="pauseBtn">Pause</button>
+    <input id="scrubber" type="range" min="0" max="100" value="0">
+    Speed:
+    <select id="videoRate">
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+  </div>
+
+  <div class="toolbar-row">
+    Colors:
+    <button style="background:#ff3333" data-color="#ff3333"></button>
+    <button style="background:#3377ff" data-color="#3377ff"></button>
+    <button style="background:#33cc66" data-color="#33cc66"></button>
+    <button style="background:#ffff44" data-color="#ffff44"></button>
+    <button style="background:#000000" data-color="#000000"></button>
+    <button style="background:#ffffff" data-color="#ffffff"></button>
+    <button style="background:#ff77cc" data-color="#ff77cc"></button>
+    <button style="background:#ff9933" data-color="#ff9933"></button>
+    <button style="background:#9933ff" data-color="#9933ff"></button>
+  </div>
+
+  <div class="toolbar-row">
+    Thickness: <input type="range" id="thick" min="1" max="200" value="6">
+    Jitter: <input type="range" id="jitter" min="0" max="12" step="0.2" value="2">
+    Speed: <input type="range" id="speed" min="0" max="20" step="0.2" value="6">
+  </div>
+</div>
+
+<div id="cursor"></div>
+<canvas id="c"></canvas>
+
+<script src="wiggly-draw.js"></script>
 </body>
 </html>
