@@ -31,6 +31,10 @@ const jitter = document.getElementById('jitter');
 const speed = document.getElementById('speed');
 const cursor = document.getElementById('cursor');
 
+// Button groups
+const layerBtns = [document.getElementById('bgBtn'), document.getElementById('fgBtn')];
+const modeBtns = [document.getElementById('drawBtn'), document.getElementById('eraseBtn')];
+
 // ===============================
 // HELPERS
 // ===============================
@@ -185,10 +189,26 @@ function drawStrokes(list) {
 // UI BUTTONS
 // ===============================
 
-document.getElementById('bgBtn').onclick = () => state.activeLayer = 'bg';
-document.getElementById('fgBtn').onclick = () => state.activeLayer = 'fg';
-document.getElementById('drawBtn').onclick = () => state.mode = 'draw';
-document.getElementById('eraseBtn').onclick = () => state.mode = 'erase';
+document.getElementById('bgBtn').onclick = function() {
+  state.activeLayer = 'bg';
+  setActiveButton(layerBtns, this);
+};
+
+document.getElementById('fgBtn').onclick = function() {
+  state.activeLayer = 'fg';
+  setActiveButton(layerBtns, this);
+};
+
+document.getElementById('drawBtn').onclick = function() {
+  state.mode = 'draw';
+  setActiveButton(modeBtns, this);
+};
+
+document.getElementById('eraseBtn').onclick = function() {
+  state.mode = 'erase';
+  setActiveButton(modeBtns, this);
+};
+
 document.getElementById('undoBtn').onclick = undo;
 document.getElementById('redoBtn').onclick = redo;
 document.getElementById('clearBtn').onclick = () => {
