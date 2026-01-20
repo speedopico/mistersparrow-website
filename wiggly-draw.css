@@ -1,3 +1,5 @@
+BODY { background: LIME !important; }
+
 /* SAFETY: ensure root containers actually stretch */
 html, body { height: 100%; }
 
