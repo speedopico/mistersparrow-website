@@ -3,73 +3,214 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wiggly Drawing Tool</title>
+<title>Drawtime 90s</title>
 <link rel="stylesheet" href="wiggly-draw.css">
 </head>
 <body>
 
-<h2>Upload Source</h2>
-<div class="upload-row">
-  Image: <input type="file" id="upload">
-  Video: <input type="file" id="videoUpload" accept="video/*">
+<div class="retro-window">
+  <div class="title-bar">
+    <div class="title-text">Drawtime 1.0</div>
+    <div class="window-controls">
+      <div class="control-btn close"></div>
+      <div class="control-btn maximize"></div>
+      <div class="control-btn minimize"></div>
+    </div>
+  </div>
+  
+  <div class="window-content">
+    <!-- Sidebar Controls -->
+    <div class="control-panel">
+      <!-- File Upload -->
+      <div class="control-section">
+        <div class="section-title">File</div>
+        <div class="upload-row">
+          <label class="file-label">
+            Image
+            <input type="file" id="upload" class="retro-file" accept="image/*">
+          </label>
+          <label class="file-label">
+            Video
+            <input type="file" id="videoUpload" accept="video/*" class="retro-file">
+          </label>
+        </div>
+      </div>
+      
+      <!-- Row 1: Layers & Tools -->
+      <div class="control-row">
+        <div class="control-section compact">
+          <div class="section-title">Layers</div>
+          <div class="btn-group-horizontal">
+            <button id="bgBtn" class="retro-btn small">BG</button>
+            <button id="fgBtn" class="retro-btn small active">FG</button>
+          </div>
+        </div>
+        
+        <div class="control-section compact">
+          <div class="section-title">Tools</div>
+          <div class="btn-group-horizontal">
+            <button id="drawBtn" class="retro-btn small active">Draw</button>
+            <button id="eraseBtn" class="retro-btn small">Erase</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Row 2: History & Modes -->
+      <div class="control-row">
+        <div class="control-section compact">
+          <div class="section-title">History</div>
+          <div class="btn-group-horizontal">
+            <button id="undoBtn" class="retro-btn small">Undo</button>
+            <button id="redoBtn" class="retro-btn small">Redo</button>
+            <button id="clearBtn" class="retro-btn small danger">Clear</button>
+          </div>
+        </div>
+        
+        <div class="control-section compact">
+          <div class="section-title">Modes</div>
+          <div class="checkbox-horizontal">
+            <label><input type="checkbox" id="animateMode" class="retro-checkbox"> Animate</label>
+            <label><input type="checkbox" id="echoMode" class="retro-checkbox"> Echo</label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Brush & Speed -->
+      <div class="control-section">
+        <div class="section-title">Brush & Speed</div>
+        <div class="btn-group-horizontal compact">
+          <button id="pencilModeBtn" class="retro-btn xsmall">Normal</button>
+          <button id="speedScaleBtn" class="retro-btn xsmall">Speed: OFF</button>
+        </div>
+      </div>
+      
+      <!-- Drawing Settings -->
+      <div class="control-section">
+        <div class="section-title">Drawing</div>
+        <div class="slider-grid">
+          <div class="slider-item">
+            <div class="slider-label">Thick: <span id="thickValue">6</span></div>
+            <input type="range" id="thick" min="1" max="200" value="6" class="retro-slider">
+          </div>
+          <div class="slider-item">
+            <div class="slider-label">Jitter: <span id="jitterValue">2</span></div>
+            <input type="range" id="jitter" min="0" max="12" step="0.2" value="2" class="retro-slider">
+          </div>
+          <div class="slider-item">
+            <div class="slider-label">Speed: <span id="speedValue">6</span></div>
+            <input type="range" id="speed" min="0" max="20" step="0.2" value="6" class="retro-slider">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Pencil Settings -->
+      <div class="control-section">
+        <div class="section-title">Pencil</div>
+        <div class="slider-grid">
+          <div class="slider-item">
+            <div class="slider-label">Density: <span id="pencilDensityLabel">0.7</span></div>
+            <input type="range" id="pencilDensity" min="0.1" max="2" step="0.1" value="0.7" class="retro-slider">
+          </div>
+          <div class="slider-item">
+            <div class="slider-label">Rough: <span id="pencilRoughnessLabel">0.4</span></div>
+            <input type="range" id="pencilRoughness" min="0" max="2" step="0.1" value="0.4" class="retro-slider">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Echo Settings -->
+      <div class="control-section">
+        <div class="section-title">Echo</div>
+        <div class="slider-grid">
+          <div class="slider-item">
+            <div class="slider-label">Delay: <span id="echoDelayLabel">1000ms</span></div>
+            <input type="range" id="echoDelay" min="100" max="5000" value="1000" class="retro-slider">
+          </div>
+          <div class="slider-item">
+            <div class="slider-label">Count: <span id="echoCountLabel">3</span></div>
+            <input type="range" id="echoCount" min="1" max="100" value="3" class="retro-slider">
+          </div>
+          <div class="slider-item">
+            <div class="slider-label">Fade: <span id="echoFadeLabel">70%</span></div>
+            <input type="range" id="echoFade" min="0" max="100" value="70" class="retro-slider">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Colors -->
+      <div class="control-section">
+        <div class="section-title">Colors</div>
+        <div class="color-grid">
+          <button style="background:#000000" data-color="#000000" class="color-btn" title="Black"></button>
+          <button style="background:#ffffff" data-color="#ffffff" class="color-btn" title="White"></button>
+          <button style="background:#ff3333" data-color="#ff3333" class="color-btn" title="Red"></button>
+          <button style="background:#3377ff" data-color="#3377ff" class="color-btn" title="Blue"></button>
+          <button style="background:#33cc66" data-color="#33cc66" class="color-btn" title="Green"></button>
+          <button style="background:#fff000" data-color="#fff000" class="color-btn" title="Yellow"></button>
+          <button style="background:#ff77cc" data-color="#ff77cc" class="color-btn" title="Pink"></button>
+          <button style="background:#ff9933" data-color="#ff9933" class="color-btn" title="Orange"></button>
+          <button style="background:#9933ff" data-color="#9933ff" class="color-btn" title="Purple"></button>
+          <button style="background:#997646" data-color="#997646" class="color-btn" title="Black"></button>
+        </div>
+      </div>
+      
+      <!-- Album Cover Square Image (Bottom of Control Panel) -->
+      <div class="control-section album-cover-container">
+        <div class="section-title">Album Cover</div>
+        <div class="album-cover-frame">
+          <!-- REPLACE THIS WITH YOUR IMAGE FILE NAME -->
+          <img src="2005 - Paranormal Bob.JPG" alt="Album Cover" class="album-cover-image">
+        </div>
+      </div>
+    </div>
+    
+    <!-- Canvas Area - FIXED LAYOUT -->
+<div class="canvas-container">
+  <div class="canvas-header">
+    <div class="video-controls">
+      <button id="playBtn" class="retro-btn xsmall">▶️</button>
+      <button id="pauseBtn" class="retro-btn xsmall">⏸️</button>
+      <input id="scrubber" type="range" min="0" max="100" value="0" class="retro-slider scrubber">
+      <select id="videoRate" class="retro-select">
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+        <option value="1.5">1.5x</option>
+        <option value="2">2x</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Main canvas area - takes all remaining space above lyrics -->
+  <div class="canvas-main">
+    <canvas id="c"></canvas>
+  </div>
+  
+  <!-- Lyrics strip - fixed above status bar -->
+  <div class="lyrics-section">
+    <!-- Singing Person Image -->
+    <div class="singer-image-container">
+      <img src="Singing Lyrics.PNG" alt="Singing Person" class="singer-image">
+    </div>
+    
+    <!-- Lyrics Text Input Box -->
+    <div class="lyrics-input-container">
+      <div class="lyrics-input-frame">
+        <textarea class="lyrics-textarea" placeholder="" readonly></textarea>
+      </div>
+    </div>
+  </div>
+    <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-text">Ready | Layer: <span id="currentLayer">FG</span> | Tool: <span id="currentMode">Draw</span> | Brush: <span id="currentBrush">Normal</span></div>
+    <div class="status-info">Drawtime v1.0 © 2026</div>
+  </div>
+</div>
 </div>
 
-<video id="video" loop muted></video>
+  
 
-<div class="toolbar">
-  <div class="toolbar-row">
-    Layer:
-    <button id="bgBtn">Background</button>
-    <button id="fgBtn" class="active">Foreground</button>
-    
-    Mode:
-    <button id="drawBtn" class="active">Draw</button>
-    <button id="eraseBtn">Eraser</button>
-    
-    Undo: <button id="undoBtn">Undo</button>
-    Redo: <button id="redoBtn">Redo</button>
-    
-    <button id="clearBtn">Clear All</button>
-  </div>
 
-  <div class="toolbar-row">
-    Video:
-    <button id="playBtn">Play</button>
-    <button id="pauseBtn">Pause</button>
-    
-    <input id="scrubber" type="range" min="0" max="100" value="0" style="width:180px">
-    
-    Speed:
-    <select id="videoRate">
-      <option value="0.5">0.5x</option>
-      <option value="1" selected>1x</option>
-      <option value="1.5">1.5x</option>
-      <option value="2">2x</option>
-    </select>
-  </div>
-
-  <div class="toolbar-row">
-    Colors:
-    <button style="background:#ff3333" data-color="#ff3333"></button>
-    <button style="background:#3377ff" data-color="#3377ff"></button>
-    <button style="background:#33cc66" data-color="#33cc66"></button>
-    <button style="background:#ffff44" data-color="#ffff44"></button>
-    <button style="background:#000000" data-color="#000000"></button>
-    <button style="background:#ffffff" data-color="#ffffff"></button>
-    <button style="background:#ff77cc" data-color="#ff77cc"></button>
-    <button style="background:#ff9933" data-color="#ff9933"></button>
-    <button style="background:#9933ff" data-color="#9933ff"></button>
-  </div>
-
-  <div class="toolbar-row">
-    Thickness: <input type="range" id="thick" min="1" max="200" value="6">
-    Jitter: <input type="range" id="jitter" min="0" max="12" step="0.2" value="2">
-    Speed: <input type="range" id="speed" min="0" max="20" step="0.2" value="6">
-  </div>
-</div>
-
-<div id="cursor"></div>
-<canvas id="c"></canvas>
+<video id="video" loop muted style="display:none;"></video>
 
 <script src="wiggly-draw.js"></script>
 </body>
