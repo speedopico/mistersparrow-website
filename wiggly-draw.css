@@ -1,8 +1,3 @@
-BODY { background: LIME !important; }
-
-/* SAFETY: ensure root containers actually stretch */
-html, body { height: 100%; }
-
 /* 90s Retro Styling - Ultra Compact */
 body {
   margin: 0;
@@ -20,8 +15,8 @@ body {
 .retro-window {
   width: 95vw;
   max-width: 1400px;
-  height: 98vh;
-  min-height: 600px;
+  height: 98vh; /* INCREASED from 95vh to 98vh */
+  min-height: 600px; /* INCREASED from 500px to 600px */
   background: #c0c0c0;
   border: 3px solid;
   border-color: #ffffff #808080 #808080 #ffffff;
@@ -46,7 +41,10 @@ body {
   height: 24px;
 }
 
-.window-controls { display: flex; gap: 6px; }
+.window-controls {
+  display: flex;
+  gap: 6px;
+}
 
 .control-btn {
   width: 10px;
@@ -69,7 +67,7 @@ body {
   min-height: 0;
 }
 
-/* Control Panel */
+/* Control Panel - make room for lyrics */
 .control-panel {
   width: 250px;
   background: #c0c0c0;
@@ -83,6 +81,21 @@ body {
   flex-shrink: 0;
 }
 
+.control-panel::-webkit-scrollbar {
+  width: 8px;
+  display: block;
+}
+
+.control-panel::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border: 1px solid #808080;
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+  background: #000080;
+  border: 1px solid #ffffff;
+}
+
 .control-section {
   background: #d4d0c8;
   border: 2px solid;
@@ -91,15 +104,34 @@ body {
   margin-bottom: 4px;
 }
 
+.control-section.compact {
+  padding: 2px;
+  margin: 0;
+  flex: 1;
+  min-height: 50px;
+}
+
 .section-title {
   font-weight: bold;
   color: #000080;
   margin-bottom: 2px;
   font-size: 15px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
-/* Canvas */
+/* Compact Rows */
+.control-row {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.control-row .control-section {
+  flex: 1;
+}
+
+/* Canvas Container */
 .canvas-container {
   flex: 1;
   display: flex;
@@ -107,23 +139,45 @@ body {
   background: #808080;
   padding: 1px;
   min-height: 0;
+  min-width: 0;
+  position: relative;
 }
 
+/* NEW: area that holds the canvas, fills leftover space */
 .canvas-main {
-  flex: 1;
-  min-height: 0;
+  flex: 1;          /* take all remaining height between header and lyrics */
+  min-height: 0;    /* allow flex to shrink properly */
   display: flex;
+}
+
+.canvas-header {
+  background: #c0c0c0;
+  padding: 4px 8px;
+  border-bottom: 2px solid #808080;
+  border-right: 2px solid #808080;
+  height: 32px;
+}
+
+.video-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  height: 100%;
 }
 
 #c {
   flex: 1;
   background: white;
   border: 2px inset #808080;
+  display: block;
   width: 100%;
   height: 100%;
+  cursor: crosshair;
+  max-width: 100%;
+  image-rendering: auto;
 }
 
-/* Buttons */
+/* Ultra Compact Buttons */
 .retro-btn {
   background: #c0c0c0;
   border: 2px solid;
@@ -131,48 +185,477 @@ body {
   padding: 3px 6px;
   font-family: 'Courier New', monospace;
   font-size: 13px;
+  cursor: pointer;
+  color: black;
+  margin: 1px;
+  min-width: 40px;
+  text-align: center;
+  white-space: nowrap;
+  height: 24px;
 }
 
-/* Sliders */
+.retro-btn.small {
+  padding: 2px 4px;
+  font-size: 13px;
+  min-width: 35px;
+  height: 20px;
+}
+
+.retro-btn.xsmall {
+  padding: 1px 3px;
+  font-size: 13px;
+  min-width: 25px;
+  height: 18px;
+}
+
+.retro-btn:hover {
+  background: #d4d0c8;
+}
+
+.retro-btn:active {
+  border-color: #808080 #ffffff #ffffff #808080;
+  padding: 4px 5px 2px 7px;
+}
+
+.retro-btn.small:active {
+  padding: 3px 3px 1px 5px;
+}
+
+.retro-btn.active {
+  border-color: #808080 #ffffff #ffffff #808080;
+  background: #000080;
+  color: white;
+}
+
+.retro-btn.danger {
+  background: #ffcccc;
+  color: #cc0000;
+  font-weight: bold;
+}
+
+/* Button Groups */
+.btn-group-horizontal {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+}
+
+/* Sliders - COMPACT GRID */
 .slider-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+  margin-top: 4px;
 }
 
-/* FILE INPUT FIX — THIS WAS THE CRASH */
+.slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slider-label {
+  font-size: 13px;
+  color: #000080;
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.retro-slider {
+  width: 100%;
+  height: 14px;
+  background: #c0c0c0;
+  border: 2px inset #808080;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.retro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 18px;
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  cursor: pointer;
+}
+
+.retro-slider::-moz-range-thumb {
+  width: 12px;
+  height: 18px;
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  cursor: pointer;
+}
+
+.scrubber {
+  flex: 1;
+  min-width: 100px;
+}
+
+/* Color Grid */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  padding: 0px;
+}
+
+.color-btn {
+  width: 28px;
+  height: 28px;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  cursor: pointer;
+  padding: 0;
+  margin: 0 auto;
+  transition: transform 0.1s;
+}
+
+.color-btn:hover {
+  transform: scale(1.1);
+}
+
+.color-btn.active {
+  border-color: #ff0000;
+  box-shadow: 0 0 5px #ff0000;
+}
+
+/* File Inputs */
+.upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .file-label {
   font-size: 13px;
   color: #000080;
   font-weight: bold;
   display: flex;
   flex-direction: column;
-  gap: 2px;       /* ✅ FIXED */
+  gap: px;
 }
 
-/* Album Cover */
+.retro-file {
+  font-size: 12px;
+  width: 100%;
+  margin: 0;
+}
+
+.retro-file::file-selector-button {
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  font-family: 'Courier New', monospace;
+  padding: 1px 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Checkboxes - FIXED ALIGNMENT */
+.checkbox-horizontal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.checkbox-horizontal label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #000080;
+  white-space: nowrap;
+}
+
+.retro-checkbox {
+  margin: 0;
+  cursor: pointer;
+  width: 10px;
+  height: 10px;
+}
+
+.retro-checkbox {
+  margin: 0;
+  cursor: pointer;
+  transform: scale(0.9);
+}
+
+.retro-checkbox.tiny {
+  transform: scale(0.7);
+}
+
+/* Select Dropdown */
+.retro-select {
+  background: #c0c0c0;
+  border: 2px inset #808080;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 1px;
+  color: black;
+  height: 20px;
+  min-width: 50px;
+}
+
+/* Status Bar */
+.status-bar {
+  background: #c0c0c0;
+  border-top: 2px solid #808080;
+  padding: 2px 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #000080;
+  height: 20px;
+  align-items: center;
+}
+
+.status-text, .status-info {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Cursor */
+#cursor {
+  display: none !important; /* This completely hides it */
+}
+
+/* Video Element */
+#video {
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  body {
+    padding: 5px;
+  }
+  
+  .retro-window {
+    width: 98vw;
+    height: 98vh;
+  }
+  
+  .control-panel {
+    width: 200px;
+  }
+  
+  .slider-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =============================== */
+/* ALBUM COVER STYLES - FIXED TO FILL BOX */
+/* =============================== */
+.album-cover-container {
+  margin-top: auto; /* Pushes to bottom */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .album-cover-frame {
   background: #808080;
   border: 2px solid;
   border-color: #808080 #ffffff #ffffff #808080;
   padding: 2px;
-  aspect-ratio: 1 / 1;
+  /* MAKE IT A SQUARE */
+  aspect-ratio: 1 / 1; /* This makes it square */
+  width: 100%; /* Take full width of container */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Prevents overflow */
 }
 
-/* SAFE FALLBACK WITHOUT :after on IMG */
-.album-cover-frame::before {
+.album-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Use COVER to fill the square */
+  display: block;
+}
+
+.album-cover-image:after {
   content: "ALBUM";
-  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #000080;
   color: white;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
 }
 
-/* Lyrics Section */
+/* =============================== */
+/* LYRICS SECTION STYLES - FIXED */
+/* =============================== */
 .lyrics-section {
   background: #c0c0c0;
   border: 2px solid;
   border-color: #ffffff #808080 #808080 #ffffff;
   padding: 6px;
   height: 80px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px; /* Space between album cover and lyrics */
+  flex-shrink: 0;
 }
 
-/* Removed invalid img:after rules */
+/* Singing Person Image */
+.singer-image-container {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+  width: 68px;
+  background: #d4d0c8;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  padding: 2px;
+}
+
+.singer-image {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Fallback if singer image doesn't load */
+.singer-image:after {
+  content: "🎤";
+  display: block;
+  text-align: center;
+  line-height: 68px;
+  font-size: 24px;
+  color: #000080;
+}
+
+/* Lyrics Input Container - LARGER */
+.lyrics-input-container {
+  flex: 1;
+  height: 68px;
+}
+
+.lyrics-input-frame {
+  background: #808080;
+  border: 2px solid;
+  border-color: #808080 #ffffff #ffffff #808080;
+  padding: 2px;
+  height: 100%;
+  width: 100%;
+}
+
+.lyrics-textarea {
+  background: white;
+  border: 2px inset #808080;
+  width: 100%;
+  height: 100%;
+  padding: 6px 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #000080;
+  box-sizing: border-box;
+  outline: none;
+  resize: none;
+  overflow: auto;
+  line-height: 1.4;
+}
+
+.lyrics-textarea:focus {
+  border: 2px solid #000080;
+}
+
+.lyrics-textarea::placeholder {
+  color: transparent; /* No placeholder text */
+}
+
+
+/* =============================== */
+/* ULTRA COMPACT OVERRIDES */
+/* =============================== */
+
+/*.control-panel {
+  padding: 3px !important;
+  gap: 2px !important;
+}
+
+.control-section {
+  padding: 3px !important;
+  margin-bottom: 1px !important;
+}
+
+.control-section.compact {
+  padding: 1px !important;
+  min-height: 45px !important;
+}
+
+.section-title {
+  margin-bottom: 1px !important;
+  font-size: 15px !important;
+}
+
+.control-row {
+  gap: 1px !important;
+  margin-bottom: 1px !important;
+}
+
+.slider-grid {
+  gap: 3px !important;
+  margin-top: 1px !important;
+}
+
+.slider-item {
+  gap: 1px !important;
+}
+
+.slider-label {
+  font-size: 9px !important;
+}
+
+.upload-row {
+  gap: 1px !important;
+}
+
+.file-label {
+  font-size: 8px !important;
+  gap: 0px !important;
+}
+
+.color-grid {
+  gap: 0px !important;
+  padding: 0px !important;
+}
+
+.color-btn {
+  height: 24px !important;
+}
+
+.btn-group-horizontal {
+  gap: 1px !important;
+}
+
+.retro-btn.small {
+  padding: 1px 3px !important;
+  font-size: 9px !important;
+  min-width: 30px !important;
+  height: 18px !important;
+}
+
+.retro-btn.xsmall {
+  padding: 0px 2px !important;
+  font-size: 8px !important;
+  min-width: 25px !important;
+  height: 16px !important;
+}*/
