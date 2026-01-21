@@ -21,16 +21,25 @@ let state = {
   brushMode: 'normal',
   pencilDensity: 0.7,
   pencilRoughness: 0.4,
-  speedScaling: false
+  speedScaling: false,
+  animateShape: 'circle', 
+  
+  // ⭐ ADDED: SPEED SCALING STATE VARIABLES
+  minThickness: 1,
+  maxThickness: 200,
+  speedHistory: [],
+  smoothedSpeed: 0,
+  lastPos: null,
+  lastTime: null
 };
 
 let strokes = { fg: [], bg: [] };
 let animatedStrokes = { fg: [], bg: [] };
 let history = { fg: { undo: [], redo: [] }, bg: { undo: [], redo: [] } };
-let current = null; // This needs to be accessible globally
+let current = null;
 let noiseCache = new Map();
 
-// UI elements - MAKE SURE THESE EXIST IN YOUR HTML
+// UI elements
 const thick = document.getElementById('thick');
 const jitter = document.getElementById('jitter');
 const speedSlider = document.getElementById('speed');
@@ -49,28 +58,22 @@ const echoFadeLabel = document.getElementById('echoFadeLabel');
 // CANVAS SETUP
 // ===============================
 function initCanvas() {
-  const container = document.querySelector('.canvas-container');
-  const width = container.clientWidth - 4;
-  const height = container.clientHeight - 40;
+  const container = document.querySelector('.canvas-main');
+  const width = container.clientWidth;
+  const height = container.clientHeight;
   
-  // Set canvas display size
   canvas.style.width = width + 'px';
   canvas.style.height = height + 'px';
-  
-  // Set canvas drawing buffer size (match display)
   canvas.width = width;
   canvas.height = height;
   
-  console.log("Canvas initialized:", width, "x", height);
-  
-  // Clear and set background
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 // ===============================
-// MOUSE POSITION - FIXED SCALING
+// MOUSE POSITION
 // ===============================
 function getMousePos(e) {
   const rect = canvas.getBoundingClientRect();
@@ -79,9 +82,78 @@ function getMousePos(e) {
   return {
     x: (e.clientX - rect.left) * scaleX,
     y: (e.clientY - rect.top) * scaleY,
-    time: Date.now()
+    time: Date.now() // ⭐ IMPORTANT: time property for speed calculation
   };
 }
+
+// ===============================
+// ⭐ ADDED: SPEED SCALING FUNCTIONS
+// ===============================
+function calculateSpeed(pos) {
+  if (!state.lastPos || !state.lastTime) return 0;
+  
+  const distance = Math.sqrt(
+    Math.pow(pos.x - state.lastPos.x, 2) + 
+    Math.pow(pos.y - state.lastPos.y, 2)
+  );
+  
+  const timeDelta = pos.time - state.lastTime;
+  if (timeDelta === 0) return 0;
+  
+  return distance / timeDelta; // pixels per millisecond
+}
+
+function updateSmoothedSpeed(rawSpeed) {
+  state.speedHistory.push(rawSpeed);
+  
+  if (state.speedHistory.length > 10) {
+    state.speedHistory.shift();
+  }
+  
+  const sum = state.speedHistory.reduce((a, b) => a + b, 0);
+  state.smoothedSpeed = sum / state.speedHistory.length;
+  
+  return state.smoothedSpeed;
+}
+
+function getThicknessFromSpeed(smoothedSpeed) {
+  if (!state.speedScaling) return parseInt(thick.value, 10);
+  
+  const speedThresholdForMaxThinness = 2.0;
+  const speedRatio = Math.min(smoothedSpeed / speedThresholdForMaxThinness, 1);
+  
+  if (!window.lastThickness) window.lastThickness = state.maxThickness;
+  
+  let targetThicknessRatio;
+  
+  if (speedRatio < 0.2) {
+    targetThicknessRatio = 0.9 + (0.1 * (1 - speedRatio / 0.2));
+  } else if (speedRatio < 0.6) {
+    const zoneProgress = (speedRatio - 0.2) / 0.4;
+    targetThicknessRatio = 0.9 - (zoneProgress * zoneProgress * 0.6);
+  } else {
+    const zoneProgress = (speedRatio - 0.6) / 0.4;
+    targetThicknessRatio = 0.3 - (zoneProgress * 0.25);
+  }
+  
+  const targetThickness = state.minThickness + 
+    (targetThicknessRatio * (state.maxThickness - state.minThickness));
+  
+  const currentThickness = window.lastThickness;
+  let newThickness;
+  
+  if (targetThickness < currentThickness) {
+    newThickness = currentThickness * 0.05 + targetThickness * 0.95;
+  } else {
+    newThickness = currentThickness * 0.9 + targetThickness * 0.1;
+  }
+  
+  window.lastThickness = newThickness;
+  
+  const minimumVisibleThickness = Math.max(state.minThickness, 6);
+  return Math.max(minimumVisibleThickness, Math.min(state.maxThickness, newThickness));
+}
+// ⭐ END OF ADDED SPEED SCALING FUNCTIONS
 
 // ===============================
 // IMAGE LOADING
@@ -109,30 +181,25 @@ upload.addEventListener('change', function(e) {
 
 function drawImageToCanvas() {
   if (state.img) {
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Calculate aspect ratio fit
     const imgRatio = state.img.width / state.img.height;
     const canvasRatio = canvas.width / canvas.height;
     
     let drawWidth, drawHeight, x, y;
     
     if (imgRatio > canvasRatio) {
-      // Image is wider than canvas
       drawWidth = canvas.width;
       drawHeight = canvas.width / imgRatio;
       x = 0;
       y = (canvas.height - drawHeight) / 2;
     } else {
-      // Image is taller than canvas
       drawHeight = canvas.height;
       drawWidth = canvas.height * imgRatio;
       x = (canvas.width - drawWidth) / 2;
       y = 0;
     }
     
-    // Draw the image centered
     ctx.drawImage(state.img, x, y, drawWidth, drawHeight);
   }
 }
@@ -170,7 +237,7 @@ function getNoise(key, j) {
 }
 
 // ===============================
-// ANIMATION SETTINGS - FROM OLD WORKING CODE
+// ANIMATION SETTINGS
 // ===============================
 if (animateCheckbox) {
   animateCheckbox.addEventListener('change', () => {
@@ -211,7 +278,7 @@ if (echoFadeSlider && echoFadeLabel) {
 }
 
 // ===============================
-// MOUSE EVENT HANDLERS - FROM OLD WORKING CODE
+// MOUSE EVENT HANDLERS
 // ===============================
 canvas.addEventListener('mousedown', function(e) {
   state.drawing = true;
@@ -219,12 +286,19 @@ canvas.addEventListener('mousedown', function(e) {
   
   console.log("Mouse down at:", pos.x, pos.y, "Mode:", state.mode);
 
+  // ⭐ ADDED: Initialize speed tracking for animation mode
+  if (state.animateMode && state.speedScaling) {
+    state.lastPos = pos;
+    state.lastTime = pos.time;
+    state.speedHistory = [];
+    state.smoothedSpeed = 0;
+  }
+
   if (state.mode === 'draw') {
     const initialThickness = parseInt(thick.value, 10);
     const now = performance.now();
 
     if (state.animateMode) {
-      // ANIMATION MODE - EXACTLY FROM OLD CODE
       current = {
         layer: state.activeLayer,
         color: state.color,
@@ -245,7 +319,6 @@ canvas.addEventListener('mousedown', function(e) {
       animatedStrokes[state.activeLayer].push(current);
       console.log("Started animated stroke");
     } else {
-      // REGULAR DRAW MODE
       current = {
         layer: state.activeLayer,
         color: state.color,
@@ -269,16 +342,35 @@ canvas.addEventListener('mousemove', function(e) {
   
   if (!state.drawing) return;
 
+  // ⭐ ADDED: Calculate current thickness with speed scaling
+  let currentThickness = parseInt(thick.value, 10);
+  
+  if (state.animateMode && state.speedScaling && state.drawing) {
+    if (state.lastPos && state.lastTime) {
+      const rawSpeed = calculateSpeed(pos);
+      const smoothedSpeed = updateSmoothedSpeed(rawSpeed);
+      currentThickness = getThicknessFromSpeed(smoothedSpeed);
+      
+      // Update slider to show current thickness
+      thick.value = Math.round(currentThickness);
+      document.getElementById('thickValue').textContent = Math.round(currentThickness);
+    }
+    
+    state.lastPos = pos;
+    state.lastTime = pos.time;
+  }
+
   if (state.mode === 'draw' && current) {
     if (state.animateMode) {
       const now = performance.now();
       const elapsed = now - current.createdAt;
       
+      // ⭐ MODIFIED: Use currentThickness instead of thick.value
       current.path.push({ 
         x: pos.x, 
         y: pos.y, 
         time: elapsed,
-        thickness: parseInt(thick.value, 10)
+        thickness: currentThickness
       });
     } else {
       current.pts.push({ x: pos.x, y: pos.y });
@@ -315,12 +407,23 @@ canvas.addEventListener('mouseup', function() {
 
   state.drawing = false;
   current = null;
+  
+  // ⭐ ADDED: Reset speed tracking
+  state.lastPos = null;
+  state.lastTime = null;
+  state.speedHistory = [];
+  state.smoothedSpeed = 0;
+  
   console.log("Mouse up");
 });
 
 canvas.addEventListener('mouseleave', function() {
   state.drawing = false;
   current = null;
+  
+  // ⭐ ADDED: Reset speed tracking
+  state.lastPos = null;
+  state.lastTime = null;
 });
 
 // ===============================
@@ -406,7 +509,7 @@ function drawPencilStroke(s, j) {
 }
 
 // ===============================
-// ANIMATION FUNCTIONS - EXACTLY FROM OLD WORKING CODE
+// ANIMATION FUNCTIONS
 // ===============================
 function getPositionAtTime(path, targetTime) {
   if (!path.length) return null;
@@ -438,7 +541,6 @@ function drawAnimatedStrokes(list, globalNow) {
 
     const pathDuration = s.path[s.path.length - 1].time || 1;
 
-    // LIVE DRAWING PREVIEW
     if (state.drawing && current === s) {
       const elapsed = (globalNow - s.createdAt) * speedFactor;
       if (state.echoMode) {
@@ -454,23 +556,32 @@ function drawAnimatedStrokes(list, globalNow) {
             : s.color;
           
           const dotSize = pos.thickness || s.baseThickness;
+          if (state.animateShape === 'square') {
+          const halfSize = dotSize / 2;
+          ctx.fillRect(pos.x - halfSize, pos.y - halfSize, dotSize, dotSize);
+        } else {
           ctx.beginPath();
           ctx.arc(pos.x, pos.y, dotSize / 2, 0, Math.PI * 2);
           ctx.fill();
+        }
         }
       } else {
         const currentPos = s.path[s.path.length - 1];
         ctx.fillStyle = s.color;
         
         const dotSize = currentPos.thickness || s.baseThickness;
-        ctx.beginPath();
-        ctx.arc(currentPos.x, currentPos.y, dotSize / 2, 0, Math.PI * 2);
-        ctx.fill();
+        if (state.animateShape === 'square') {
+          const halfSize = dotSize / 2;
+          ctx.fillRect(currentPos.x - halfSize, currentPos.y - halfSize, dotSize, dotSize);
+        } else {
+          ctx.beginPath();
+          ctx.arc(currentPos.x, currentPos.y, dotSize / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       return;
     }
 
-    // ASYNC PLAYBACK
     const baseElapsed = globalNow - s.createdAt;
     const delay = s.echoDelay || 0;
     const effectiveElapsed = (baseElapsed - delay) * speedFactor;
@@ -501,24 +612,51 @@ function drawAnimatedStrokes(list, globalNow) {
 
     if (dist > (dotSize * 0.75) && !hasLooped) {
       const blurAlpha = Math.min(alpha, 0.6);
-      ctx.strokeStyle = s.color.startsWith('#') 
-        ? hexToRgba(s.color, blurAlpha) 
-        : s.color;
       
-      const avgThickness = (dotSize + prevDotSize) / 2;
-      ctx.lineWidth = avgThickness;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(prevPos.x, prevPos.y);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
+      // ⭐ DRAW MOTION BLUR BASED ON SHAPE
+      if (state.animateShape === 'square') {
+        // For squares, draw multiple squares along the path
+        ctx.fillStyle = s.color.startsWith('#') 
+          ? hexToRgba(s.color, blurAlpha * 0.5) 
+          : s.color;
+        
+        const steps = Math.ceil(dist / (dotSize * 0.3));
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const x = prevPos.x + (pos.x - prevPos.x) * t;
+          const y = prevPos.y + (pos.y - prevPos.y) * t;
+          const size = prevDotSize + (dotSize - prevDotSize) * t;
+          const halfSize = size / 2;
+          ctx.fillRect(x - halfSize, y - halfSize, size, size);
+        }
+      } else {
+        // Original circle motion blur
+        ctx.strokeStyle = s.color.startsWith('#') 
+          ? hexToRgba(s.color, blurAlpha) 
+          : s.color;
+        
+        const avgThickness = (dotSize + prevDotSize) / 2;
+        ctx.lineWidth = avgThickness;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(prevPos.x, prevPos.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
     } else {
       ctx.fillStyle = s.color.startsWith('#') 
         ? hexToRgba(s.color, alpha) 
         : s.color;
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, dotSize / 2, 0, Math.PI * 2);
-      ctx.fill();
+      
+      // ⭐ DRAW SHAPE BASED ON animateShape STATE
+      if (state.animateShape === 'square') {
+        const halfSize = dotSize / 2;
+        ctx.fillRect(pos.x - halfSize, pos.y - halfSize, dotSize, dotSize);
+      } else {
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, dotSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   });
 }
@@ -527,7 +665,6 @@ function drawAnimatedStrokes(list, globalNow) {
 // UI CONTROLS SETUP
 // ===============================
 function setupUIControls() {
-  // Layer buttons
   document.getElementById('bgBtn').addEventListener('click', function() {
     state.activeLayer = 'bg';
     document.getElementById('bgBtn').classList.add('active');
@@ -542,7 +679,6 @@ function setupUIControls() {
     updateStatusBar();
   });
   
-  // Tool buttons
   document.getElementById('drawBtn').addEventListener('click', function() {
     state.mode = 'draw';
     document.getElementById('drawBtn').classList.add('active');
@@ -557,7 +693,6 @@ function setupUIControls() {
     updateStatusBar();
   });
   
-  // Pencil mode
   document.getElementById('pencilModeBtn').addEventListener('click', function() {
     state.brushMode = state.brushMode === 'normal' ? 'pencil' : 'normal';
     this.classList.toggle('active', state.brushMode === 'pencil');
@@ -565,15 +700,26 @@ function setupUIControls() {
     updateStatusBar();
   });
   
-  // Speed scaling
+  // ⭐ MODIFIED: Speed scaling button now resets tracking
   document.getElementById('speedScaleBtn').addEventListener('click', function() {
     state.speedScaling = !state.speedScaling;
     const isOn = state.speedScaling;
     this.classList.toggle('active', isOn);
     this.textContent = isOn ? 'Speed: ON' : 'Speed: OFF';
+    
+    // Reset speed tracking
+    state.speedHistory = [];
+    state.smoothedSpeed = 0;
+    state.lastPos = null;
+    state.lastTime = null;
+  });
+
+    document.getElementById('shapeBtn').addEventListener('click', function() {
+    state.animateShape = state.animateShape === 'circle' ? 'square' : 'circle';
+    this.textContent = state.animateShape === 'circle' ? '●' : '■';
+    this.classList.toggle('active', state.animateShape === 'square');
   });
   
-  // History buttons
   document.getElementById('undoBtn').addEventListener('click', function() {
     const h = history[state.activeLayer];
     if (h.undo.length > 0) {
@@ -600,7 +746,6 @@ function setupUIControls() {
     drawImageToCanvas();
   });
   
-  // Color buttons
   document.querySelectorAll('[data-color]').forEach(button => {
     button.addEventListener('click', function() {
       state.color = this.dataset.color;
@@ -609,7 +754,6 @@ function setupUIControls() {
     });
   });
   
-  // Video controls
   document.getElementById('playBtn').addEventListener('click', function() {
     if (video.src) video.play();
   });
@@ -618,7 +762,6 @@ function setupUIControls() {
     video.pause();
   });
   
-  // Slider value displays
   const thickSlider = document.getElementById('thick');
   const jitterSlider = document.getElementById('jitter');
   const pencilDensitySlider = document.getElementById('pencilDensity');
@@ -666,47 +809,36 @@ function updateStatusBar() {
 function render() {
   const now = performance.now();
 
-  // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// Draw background
-if (state.usingVideo && video.readyState >= 2) {
-  // Calculate aspect ratio fit for video (same as images)
-  const videoRatio = video.videoWidth / video.videoHeight;
-  const canvasRatio = canvas.width / canvas.height;
-  
-  let drawWidth, drawHeight, x, y;
-  
-  if (videoRatio > canvasRatio) {
-    // Video is wider than canvas
-    drawWidth = canvas.width;
-    drawHeight = canvas.width / videoRatio;
-    x = 0;
-    y = (canvas.height - drawHeight) / 2;
-  } else {
-    // Video is taller than canvas
-    drawHeight = canvas.height;
-    drawWidth = canvas.height * videoRatio;
-    x = (canvas.width - drawWidth) / 2;
-    y = 0;
+  if (state.usingVideo && video.readyState >= 2) {
+    const videoRatio = video.videoWidth / video.videoHeight;
+    const canvasRatio = canvas.width / canvas.height;
+    
+    let drawWidth, drawHeight, x, y;
+    
+    if (videoRatio > canvasRatio) {
+      drawWidth = canvas.width;
+      drawHeight = canvas.width / videoRatio;
+      x = 0;
+      y = (canvas.height - drawHeight) / 2;
+    } else {
+      drawHeight = canvas.height;
+      drawWidth = canvas.height * videoRatio;
+      x = (canvas.width - drawWidth) / 2;
+      y = 0;
+    }
+    
+    ctx.drawImage(video, x, y, drawWidth, drawHeight);
+  } else if (state.img) {
+    drawImageToCanvas();
   }
-  
-  ctx.drawImage(video, x, y, drawWidth, drawHeight);
-} else if (state.img) {
-  drawImageToCanvas();
-}
 
-  // Draw all strokes
   drawStrokes(strokes.bg);
+  drawAnimatedStrokes(animatedStrokes.bg, now);
   drawStrokes(strokes.fg);
-  
-  // Draw animated strokes if animate mode is on
-  if (state.animateMode) {
-    drawAnimatedStrokes(animatedStrokes.bg, now);
-    drawAnimatedStrokes(animatedStrokes.fg, now);
-  }
+  drawAnimatedStrokes(animatedStrokes.fg, now);
 
-  // Update animation settings
   state.holdFrames = Math.max(1, 21 - parseInt(speedSlider.value, 10));
   state.frame++;
 
@@ -717,50 +849,35 @@ if (state.usingVideo && video.readyState >= 2) {
 // INITIALIZATION
 // ===============================
 function init() {
-  // Initialize canvas
   initCanvas();
-  
-  // Set up all UI controls
   setupUIControls();
   
-  // Set initial active color
   const firstColorBtn = document.querySelector('[data-color]');
   if (firstColorBtn) {
     firstColorBtn.click();
   }
   
-  // Set initial button states
   document.getElementById('fgBtn').click();
   document.getElementById('drawBtn').click();
-  
-  // Update status bar
   updateStatusBar();
   
-  // Handle window resize
   window.addEventListener('resize', function() {
     setTimeout(initCanvas, 100);
   });
   
-  // Start render loop
   render();
   
   console.log("Wiggly Draw initialized successfully!");
 }
 
-// ===============================
-// START THE APPLICATION
-// ===============================
 document.addEventListener('DOMContentLoaded', init);
 
-// Keyboard shortcuts for Undo (Ctrl+Z / Cmd+Z) and Redo (Ctrl+Y / Cmd+Shift+Z)
+// Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-  // Undo: Ctrl+Z or Cmd+Z
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.repeat) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey && !e.repeat) {
     e.preventDefault();
     document.getElementById('undoBtn').click();
   }
-  
-  // Redo: Ctrl+Y OR Cmd+Shift+Z (separate conditions)
   else if ((e.ctrlKey || e.metaKey) && e.key === 'y' && !e.repeat) {
     e.preventDefault();
     document.getElementById('redoBtn').click();
@@ -768,22 +885,5 @@ document.addEventListener('keydown', function(e) {
   else if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key === 'z' && !e.repeat) {
     e.preventDefault();
     document.getElementById('redoBtn').click();
-  }
-});
-
-window.addEventListener('keydown', function(e) {
-  console.log('Key pressed:', e.key, 'Ctrl:', e.ctrlKey, 'Shift:', e.shiftKey); // DEBUG
-  
-  if (e.ctrlKey || e.metaKey) {
-    if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
-      // Ctrl+Z (undo)
-      e.preventDefault();
-      document.getElementById('undoBtn').click();
-    } 
-    else if ((e.key.toLowerCase() === 'z' && e.shiftKey) || e.key.toLowerCase() === 'y') {
-      // Ctrl+Shift+Z or Ctrl+Y (redo)
-      e.preventDefault();
-      document.getElementById('redoBtn').click();
-    }
   }
 });
