@@ -455,6 +455,48 @@ body {
   }
 }
 
+/* Highlight the whole Modes section when Animate is checked */
+.control-section.compact:has(#animateMode:checked) {
+  background: #90EE90 !important; /* Light green background */
+  border-color: #00ff00 #006600 #006600 #00ff00 !important;
+}
+
+/* Make the Animate checkbox label bold when checked */
+#animateMode:checked + label {
+  font-weight: bold;
+  color: #006600;
+}
+
+/* Optional: Make the checkbox itself more visible */
+#animateMode:checked {
+  accent-color: #00ff00;
+  outline: 2px solid #00ff00;
+}
+
+/* Highlight the whole Modes section when Echo is checked too */
+.control-section.compact:has(#echoMode:checked) {
+  background: #ADD8E6 !important; /* Light blue background */
+  border-color: #0099ff #0066cc #0066cc #0099ff !important;
+}
+
+/* Make the Echo checkbox label bold when checked */
+#echoMode:checked + label {
+  font-weight: bold;
+  color: #0066cc;
+}
+
+/* Optional: Make the checkbox itself more visible */
+#echoMode:checked {
+  accent-color: #0099ff;
+  outline: 2px solid #0099ff;
+}
+
+/* Special case: BOTH checked - make it cyan/teal */
+.control-section.compact:has(#animateMode:checked):has(#echoMode:checked) {
+  background: #7FFFD4 !important; /* Aquamarine/cyan when both are on */
+  border-color: #00ffcc #008888 #008888 #00ffcc !important;
+}
+
 /* =============================== */
 /* ALBUM COVER STYLES - FIXED TO FILL BOX */
 /* =============================== */

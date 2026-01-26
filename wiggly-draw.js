@@ -19,8 +19,8 @@ let state = {
   animateMode: false,
   echoMode: false,
   brushMode: 'normal',
-  pencilDensity: 0.7,
-  pencilRoughness: 0.4,
+  pencilDensity: 1.1,
+  pencilRoughness: 0,
   speedScaling: false,
   animateShape: 'circle', 
   
@@ -36,6 +36,7 @@ let state = {
 let strokes = { fg: [], bg: [] };
 let animatedStrokes = { fg: [], bg: [] };
 let history = { fg: { undo: [], redo: [] }, bg: { undo: [], redo: [] } };
+let animatedHistory = { fg: { undo: [], redo: [] }, bg: { undo: [], redo: [] } };
 let current = null;
 let noiseCache = new Map();
 
@@ -381,49 +382,54 @@ canvas.addEventListener('mousemove', function(e) {
 });
 
 canvas.addEventListener('mouseup', function() {
-  if (state.drawing && current && state.animateMode && state.echoMode) {
-    const echoDelay = echoDelaySlider ? parseInt(echoDelaySlider.value, 10) : 1000;
-    const maxEchoCount = echoCountSlider ? parseInt(echoCountSlider.value, 10) : 3;
-    const echoFade = echoFadeSlider ? parseInt(echoFadeSlider.value, 10) / 100 : 0.7;
+  if (state.drawing && current && state.animateMode) {
+    // Store the main stroke for undo/redo
+    animatedHistory[state.activeLayer].undo.push({
+      mainStroke: current,
+      echoStrokes: []
+    });
+    animatedHistory[state.activeLayer].redo = [];
+    
+    if (state.echoMode) {
+      const echoDelay = echoDelaySlider ? parseInt(echoDelaySlider.value, 10) : 1000;
+      const maxEchoCount = echoCountSlider ? parseInt(echoCountSlider.value, 10) : 3;
+      const echoFade = echoFadeSlider ? parseInt(echoFadeSlider.value, 10) / 100 : 0.7;
 
-    const pathDuration = current.path[current.path.length - 1].time;
-    const realEchoCount = Math.min(maxEchoCount, Math.floor(pathDuration / echoDelay));
+      const pathDuration = current.path[current.path.length - 1].time;
+      const realEchoCount = Math.min(maxEchoCount, Math.floor(pathDuration / echoDelay));
 
-    for (let echoNum = 1; echoNum <= realEchoCount; echoNum++) {
-      const minAlpha = 1 - echoFade;
-      const alpha = minAlpha + (echoFade * (1 - echoNum / (realEchoCount + 1)));
+      const createdEchos = [];
+      for (let echoNum = 1; echoNum <= realEchoCount; echoNum++) {
+        const minAlpha = 1 - echoFade;
+        const alpha = minAlpha + (echoFade * (1 - echoNum / (realEchoCount + 1)));
 
-      const echoStroke = {
-        ...JSON.parse(JSON.stringify(current)),
-        id: Math.random(),
-        echoAlpha: alpha,
-        isEcho: true,
-        echoDelay: echoNum * echoDelay 
-      };
+        const echoStroke = {
+          ...JSON.parse(JSON.stringify(current)),
+          id: Math.random(),
+          echoAlpha: alpha,
+          isEcho: true,
+          echoDelay: echoNum * echoDelay 
+        };
 
-      animatedStrokes[current.layer].push(echoStroke);
+        animatedStrokes[current.layer].push(echoStroke);
+        createdEchos.push(echoStroke);
+      }
+      
+      // Store the echo strokes with the main stroke in history
+      const lastHistoryEntry = animatedHistory[state.activeLayer].undo[animatedHistory[state.activeLayer].undo.length - 1];
+      lastHistoryEntry.echoStrokes = createdEchos;
     }
   }
 
   state.drawing = false;
   current = null;
   
-  // ⭐ ADDED: Reset speed tracking
   state.lastPos = null;
   state.lastTime = null;
   state.speedHistory = [];
   state.smoothedSpeed = 0;
   
   console.log("Mouse up");
-});
-
-canvas.addEventListener('mouseleave', function() {
-  state.drawing = false;
-  current = null;
-  
-  // ⭐ ADDED: Reset speed tracking
-  state.lastPos = null;
-  state.lastTime = null;
 });
 
 // ===============================
@@ -721,20 +727,60 @@ function setupUIControls() {
   });
   
   document.getElementById('undoBtn').addEventListener('click', function() {
-    const h = history[state.activeLayer];
-    if (h.undo.length > 0) {
-      const stroke = h.undo.pop();
-      h.redo.push(stroke);
-      strokes[state.activeLayer] = strokes[state.activeLayer].filter(s => s !== stroke);
+    // Handle animated strokes
+    if (state.animateMode) {
+      const h = animatedHistory[state.activeLayer];
+      if (h.undo.length > 0) {
+        const entry = h.undo.pop();
+        h.redo.push(entry);
+        
+        // Remove main stroke
+        animatedStrokes[state.activeLayer] = animatedStrokes[state.activeLayer].filter(
+          s => s !== entry.mainStroke
+        );
+        
+        // Remove all echo strokes
+        entry.echoStrokes.forEach(echoStroke => {
+          animatedStrokes[state.activeLayer] = animatedStrokes[state.activeLayer].filter(
+            s => s !== echoStroke
+          );
+        });
+      }
+    } else {
+      // Handle regular strokes
+      const h = history[state.activeLayer];
+      if (h.undo.length > 0) {
+        const stroke = h.undo.pop();
+        h.redo.push(stroke);
+        strokes[state.activeLayer] = strokes[state.activeLayer].filter(s => s !== stroke);
+      }
     }
   });
   
   document.getElementById('redoBtn').addEventListener('click', function() {
-    const h = history[state.activeLayer];
-    if (h.redo.length > 0) {
-      const stroke = h.redo.pop();
-      h.undo.push(stroke);
-      strokes[state.activeLayer].push(stroke);
+    // Handle animated strokes
+    if (state.animateMode) {
+      const h = animatedHistory[state.activeLayer];
+      if (h.redo.length > 0) {
+        const entry = h.redo.pop();
+        h.undo.push(entry);
+        
+        // Re-add main stroke
+        animatedStrokes[state.activeLayer].push(entry.mainStroke);
+        
+        // Re-add all echo strokes
+        entry.echoStrokes.forEach(echoStroke => {
+          animatedStrokes[state.activeLayer].push(echoStroke);
+        });
+      }
+    } else {
+      // Handle regular strokes
+      const h = history[state.activeLayer];
+      if (h.redo.length > 0) {
+        const stroke = h.redo.pop();
+        h.undo.push(stroke);
+        strokes[state.activeLayer].push(stroke);
+      }
     }
   });
   
@@ -742,6 +788,7 @@ function setupUIControls() {
     strokes = { fg: [], bg: [] };
     animatedStrokes = { fg: [], bg: [] };
     history = { fg: { undo: [], redo: [] }, bg: { undo: [], redo: [] } };
+    animatedHistory = { fg: { undo: [], redo: [] }, bg: { undo: [], redo: [] } };  // ADD THIS LINE
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawImageToCanvas();
   });
